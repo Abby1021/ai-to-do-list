@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 할 일 - 韓系簡約待辦清單</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Gowun Dodum & Noto Sans TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Completion Animation -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Gowun Dodum', 'Noto Sans TC', sans-serif;
+            background-color: #FBF9F5; /* Warm creamy off-white */
+            color: #4A4540;
+            background-image: 
+                radial-gradient(#E8E2D8 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F3EFEA;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D8CEC4;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #C2B4A5;
+        }
+
+        /* Paper Washi Tape Effect */
+        .washi-tape {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-1deg);
+            width: 110px;
+            height: 26px;
+            background-color: rgba(235, 218, 201, 0.7);
+            border-left: 2px dashed rgba(200, 180, 160, 0.4);
+            border-right: 2px dashed rgba(200, 180, 160, 0.4);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            backdrop-filter: blur(1px);
+            z-index: 10;
+        }
+
+        .washi-tape-pink {
+            background-color: rgba(243, 208, 215, 0.75);
+        }
+
+        /* Task item animation */
+        .task-enter {
+            animation: fadeInSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Custom Soft Shadow */
+        .korean-shadow {
+            box-shadow: 0 10px 30px -5px rgba(160, 140, 120, 0.08), 0 4px 12px -2px rgba(160, 140, 120, 0.03);
+        }
+
+        .korean-card {
+            background: #FFFFFF;
+            border: 1px solid #EFEAE3;
+            border-radius: 1.5rem;
+        }
+
+        /* Checkbox Custom styling */
+        .custom-checkbox {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #D5C8B8;
+            border-radius: 50%;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background-color: #FFF;
+        }
+
+        .custom-checkbox:checked {
+            background-color: #C3A995;
+            border-color: #C3A995;
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Completed Task Style */
+        .completed-text {
+            text-decoration: line-through;
+            color: #A8A096;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6 flex flex-col items-center justify-between">
+
+    <div class="w-full max-w-2xl mx-auto space-y-6">
+
+        <!-- Header Section with Date & Quote -->
+        <header class="relative korean-card p-6 sm:p-8 korean-shadow text-center overflow-hidden">
+            <div class="washi-tape"></div>
+            
+            <div class="flex items-center justify-between text-xs sm:text-sm text-[#8C8275] mb-2 font-medium tracking-wide">
+                <span id="current-date" class="bg-[#F5EFEC] px-3 py-1 rounded-full border border-[#E8DDD8]">
+                    <i class="far fa-calendar-alt mr-1"></i> 2026.09.24 (Thu)
+                </span>
+                <span class="bg-[#F0F3EC] text-[#5B6E52] px-3 py-1 rounded-full border border-[#DDE5D6]">
+                    🌱 오늘 하루도 화이팅!
+                </span>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[#3D3731] mt-2 mb-1">
+                오늘의 할 일 <span class="text-base font-normal text-[#9E9082] block sm:inline mt-1 sm:mt-0">| 靜享美好日常</span>
+            </h1>
+            <p id="daily-quote" class="text-xs sm:text-sm text-[#8A7E72] italic mt-2">
+                "一步一步來，每一件小事都是積攢幸福的過程。"
+            </p>
+
+            <!-- Progress Bar Card -->
+            <div class="mt-6 pt-5 border-t border-[#F3EFEA]">
+                <div class="flex justify-between items-center text-xs font-semibold text-[#6E6358] mb-2">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fas fa-heart text-[#E29578]"></i> 今日達成進度
+                    </span>
+                    <span id="progress-text" class="text-[#B58363]">0% (0/0)</span>
+                </div>
+                <div class="w-full h-3 bg-[#F3EFEA] rounded-full overflow-hidden p-0.5 border border-[#E6DFC2]/30">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-[#E8C5B3] via-[#DDA15E] to-[#BC6C25] rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Add Task Input Form Card -->
+        <section class="korean-card p-5 sm:p-6 korean-shadow relative">
+            <form id="todo-form" class="space-y-4">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <input 
+                            type="text" 
+                            id="task-input" 
+                            placeholder="請輸入待辦事項... (例如: 買冰美式 ☕)" 
+                            required 
+                            maxlength="60"
+                            class="w-full px-4 py-3 bg-[#FAF8F5] border border-[#E5DEC9] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#C3A995] focus:bg-white text-sm text-[#4A4540] placeholder-[#B5AAA0] transition"
+                        >
+                    </div>
+                    
+                    <button 
+                        type="submit" 
+                        class="px-6 py-3 bg-[#B58363] hover:bg-[#A07052] active:scale-95 text-white font-medium text-sm rounded-2xl transition shadow-sm flex items-center justify-center gap-2"
+                    >
+                        <i class="fas fa-plus"></i>
+                        <span>新增紀錄</span>
+                    </button>
+                </div>
+
+                <!-- Secondary Input Row: Category & Priority -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+                    <!-- Category Select -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-[#8C8275] font-medium"><i class="fas fa-tag text-[#C3A995] mr-1"></i>分類:</span>
+                        <div class="flex gap-1.5 flex-wrap" id="category-selector">
+                            <button type="button" data-cat="日常" class="cat-btn active px-3 py-1 rounded-xl border border-[#D5C8B8] bg-[#FAF6F0] text-[#6E6358] hover:bg-[#EFE6DC] transition">🌿 日常</button>
+                            <button type="button" data-cat="工作" class="cat-btn px-3 py-1 rounded-xl border border-transparent bg-[#F2F0ED] text-[#82786E] hover:bg-[#EFE6DC] transition">💼 工作</button>
+                            <button type="button" data-cat="學習" class="cat-btn px-3 py-1 rounded-xl border border-transparent bg-[#F2F0ED] text-[#82786E] hover:bg-[#EFE6DC] transition">📖 學習</button>
+                            <button type="button" data-cat="購物" class="cat-btn px-3 py-1 rounded-xl border border-transparent bg-[#F2F0ED] text-[#82786E] hover:bg-[#EFE6DC] transition">🛒 購物</button>
+                            <button type="button" data-cat="願望" class="cat-btn px-3 py-1 rounded-xl border border-transparent bg-[#F2F0ED] text-[#82786E] hover:bg-[#EFE6DC] transition">✨ 願望</button>
+                        </div>
+                    </div>
+
+                    <!-- Due Date Selector -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-[#8C8275] font-medium"><i class="far fa-clock text-[#C3A995] mr-1"></i>期限:</span>
+                        <input 
+                            type="date" 
+                            id="due-date-input" 
+                            class="px-2.5 py-1 bg-[#FAF8F5] border border-[#E5DEC9] rounded-xl text-xs text-[#6E6358] focus:outline-none focus:ring-1 focus:ring-[#C3A995]"
+                        >
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Controls Bar: Filters & Search -->
+        <section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-1">
+            <!-- Filter Tabs -->
+            <div class="flex items-center gap-1 bg-[#EFEAE3] p-1 rounded-2xl w-full sm:w-auto text-xs font-medium">
+                <button id="filter-all" class="filter-tab active flex-1 sm:flex-none px-4 py-1.5 rounded-xl text-[#3D3731] bg-white shadow-sm transition">全部 (<span id="count-all">0</span>)</button>
+                <button id="filter-active" class="filter-tab flex-1 sm:flex-none px-4 py-1.5 rounded-xl text-[#786E65] hover:text-[#3D3731] transition">待完成 (<span id="count-active">0</span>)</button>
+                <button id="filter-completed" class="filter-tab flex-1 sm:flex-none px-4 py-1.5 rounded-xl text-[#786E65] hover:text-[#3D3731] transition">已完成 (<span id="count-completed">0</span>)</button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="relative flex-1 max-w-xs">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-[#B5AAA0] text-xs"></i>
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="搜尋待辦事項..." 
+                    class="w-full pl-8 pr-3 py-1.5 bg-[#FFFFFF] border border-[#EFEAE3] rounded-2xl text-xs text-[#4A4540] placeholder-[#B5AAA0] focus:outline-none focus:ring-1 focus:ring-[#C3A995]"
+                >
+            </div>
+        </section>
+
+        <!-- Task List Area -->
+        <main>
+            <ul id="task-list" class="space-y-3">
+                <!-- Dynamic task items will be injected here -->
+            </ul>
+
+            <!-- Empty State Display -->
+            <div id="empty-state" class="hidden korean-card p-10 text-center space-y-3 my-4 korean-shadow">
+                <div class="w-16 h-16 bg-[#F7F3EE] text-[#C3A995] rounded-full flex items-center justify-center mx-auto text-2xl">
+                    <i class="fas fa-mug-hot"></i>
+                </div>
+                <p class="text-sm font-medium text-[#786E65]">目前沒有符合條件的事項呢！</p>
+                <p class="text-xs text-[#A8A096]">喝杯咖啡休息一下，或是新增一個新的計畫吧 ☕</p>
+            </div>
+        </main>
+
+        <!-- Footer / Batch Actions -->
+        <footer class="flex items-center justify-between text-xs text-[#8C8275] pt-2 px-2">
+            <span id="storage-status" class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                <span>已自動同步至 LocalStorage</span>
+            </span>
+            <button 
+                id="clear-completed-btn" 
+                class="hover:text-[#B58363] hover:underline transition hidden"
+            >
+                <i class="far fa-trash-alt mr-1"></i>清理已完成事項
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-[#3D3731] text-white text-xs px-4 py-3 rounded-2xl shadow-lg opacity-0 pointer-events-none transition-all duration-300 transform translate-y-2 flex items-center gap-2">
+        <i class="fas fa-check-circle text-[#E8C5B3]"></i>
+        <span id="toast-msg">已儲存變更</span>
+    </div>
+
+    <script>
+        // State Management
+        let tasks = [];
+        let currentFilter = 'all'; // 'all', 'active', 'completed'
+        let selectedCategory = '日常';
+        let searchQuery = '';
+
+        // Quotes for Korean Vibe
+        const quotes = [
+            "一步一步來，每一件小事都是積攢幸福的過程。✨",
+            "오늘도 수고했어. (今天也辛苦了 🌸)",
+            "專注於當下，享受手作生活般的美好日子 ☕",
+            "只要在前進，無論速度多慢都是一種成長 🌿",
+            "給自己一點溫柔與耐心，慢慢完成目標吧 🌷"
+        ];
+
+        // Category Badges Styling Configuration
+        const categoryStyles = {
+            '日常': { bg: 'bg-[#F5EFEC]', text: 'text-[#8E6C58]', border: 'border-[#E8DDD8]', icon: '🌿' },
+            '工作': { bg: 'bg-[#EEF2F5]', text: 'text-[#597387]', border: 'border-[#D9E2E8]', icon: '💼' },
+            '學習': { bg: 'bg-[#F4F1F7]', text: 'text-[#7D6B8D]', border: 'border-[#E3DCEA]', icon: '📖' },
+            '購物': { bg: 'bg-[#F7F3EC]', text: 'text-[#8C7654]', border: 'border-[#EAE0D0]', icon: '🛒' },
+            '願望': { bg: 'bg-[#F7ECEE]', text: 'text-[#9E5D6A]', border: 'border-[#EED4D8]', icon: '✨' }
+        };
+
+        // DOM Elements
+        const todoForm = document.getElementById('todo-form');
+        const taskInput = document.getElementById('task-input');
+        const dueDateInput = document.getElementById('due-date-input');
+        const taskList = document.getElementById('task-list');
+        const emptyState = document.getElementById('empty-state');
+        const searchInput = document.getElementById('search-input');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const currentDateEl = document.getElementById('current-date');
+        const dailyQuoteEl = document.getElementById('daily-quote');
+        const clearCompletedBtn = document.getElementById('clear-completed-btn');
+        const categorySelector = document.getElementById('category-selector');
+
+        // Counts DOM
+        const countAll = document.getElementById('count-all');
+        const countActive = document.getElementById('count-active');
+        const countCompleted = document.getElementById('count-completed');
+
+        // Initialize Application
+        window.addEventListener('DOMContentLoaded', () => {
+            initDateAndQuote();
+            loadTasksFromStorage();
+            setupEventListeners();
+            render();
+        });
+
+        // Date and Random Quote Setup
+        function initDateAndQuote() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const dayName = days[now.getDay()];
+
+            currentDateEl.innerHTML = `<i class="far fa-calendar-alt mr-1"></i> ${year}.${month}.${date} (${dayName})`;
+            
+            // Random daily quote
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            dailyQuoteEl.innerText = `"${randomQuote}"`;
+
+            // Set default date picker to today
+            const todayStr = `${year}-${month}-${date}`;
+            dueDateInput.value = todayStr;
+        }
+
+        // LocalStorage Logic
+        function saveTasksToStorage() {
+            try {
+                localStorage.setItem('korean_todo_tasks', JSON.stringify(tasks));
+            } catch (e) {
+                console.error("無法儲存至 LocalStorage", e);
+            }
+        }
+
+        function loadTasksFromStorage() {
+            try {
+                const stored = localStorage.getItem('korean_todo_tasks');
+                if (stored) {
+                    tasks = JSON.parse(stored);
+                } else {
+                    // 清除預設資料，初始化為空陣列
+                    tasks = [];
+                    saveTasksToStorage();
+                }
+            } catch (e) {
+                tasks = [];
+            }
+        }
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            // Form submit
+            todoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                addTask();
+            });
+
+            // Category selector buttons
+            categorySelector.addEventListener('click', (e) => {
+                const btn = e.target.closest('.cat-btn');
+                if (!btn) return;
+                
+                document.querySelectorAll('.cat-btn').forEach(b => {
+                    b.classList.remove('active', 'border-[#D5C8B8]', 'bg-[#FAF6F0]', 'text-[#6E6358]');
+                    b.classList.add('border-transparent', 'bg-[#F2F0ED]', 'text-[#82786E]');
+                });
+
+                btn.classList.add('active', 'border-[#D5C8B8]', 'bg-[#FAF6F0]', 'text-[#6E6358]');
+                btn.classList.remove('border-transparent', 'bg-[#F2F0ED]', 'text-[#82786E]');
+                
+                selectedCategory = btn.dataset.cat;
+            });
+
+            // Filter Tabs
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-tab').forEach(t => {
+                        t.classList.remove('bg-white', 'text-[#3D3731]', 'shadow-sm');
+                        t.classList.add('text-[#786E65]');
+                    });
+
+                    const target = e.currentTarget;
+                    target.classList.add('bg-white', 'text-[#3D3731]', 'shadow-sm');
+                    target.classList.remove('text-[#786E65]');
+
+                    if (target.id === 'filter-all') currentFilter = 'all';
+                    if (target.id === 'filter-active') currentFilter = 'active';
+                    if (target.id === 'filter-completed') currentFilter = 'completed';
+
+                    render();
+                });
+            });
+
+            // Search input filter
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.trim().toLowerCase();
+                render();
+            });
+
+            // Clear completed tasks
+            clearCompletedBtn.addEventListener('click', () => {
+                tasks = tasks.filter(t => !t.completed);
+                saveTasksToStorage();
+                render();
+                showToast('已清理所有已完成事項 ✨');
+            });
+        }
+
+        // Add Task Function
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (!text) return;
+
+            const newTask = {
+                id: Date.now(),
+                text: text,
+                category: selectedCategory,
+                completed: false,
+                dueDate: dueDateInput.value,
+                createdAt: Date.now()
+            };
+
+            tasks.unshift(newTask);
+            saveTasksToStorage();
+
+            taskInput.value = '';
+            showToast('成功新增待辦事項 🌸');
+            render();
+        }
+
+        // Toggle Complete Function
+        function toggleTask(id) {
+            tasks = tasks.map(t => {
+                if (t.id === id) {
+                    const nextCompleted = !t.completed;
+                    if (nextCompleted) {
+                        triggerConfetti();
+                    }
+                    return { ...t, completed: nextCompleted };
+                }
+                return t;
+            });
+
+            saveTasksToStorage();
+            render();
+        }
+
+        // Delete Task Function
+        function deleteTask(id) {
+            const taskEl = document.getElementById(`task-item-${id}`);
+            if (taskEl) {
+                taskEl.style.opacity = '0';
+                taskEl.style.transform = 'translateY(-10px)';
+                taskEl.style.transition = 'all 0.25s ease';
+                setTimeout(() => {
+                    tasks = tasks.filter(t => t.id !== id);
+                    saveTasksToStorage();
+                    render();
+                    showToast('已刪除待辦事項');
+                }, 250);
+            } else {
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasksToStorage();
+                render();
+            }
+        }
+
+        // Edit Task Text Function
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            const newText = prompt('修改待辦事項內容:', task.text);
+            if (newText !== null && newText.trim() !== '') {
+                task.text = newText.trim();
+                saveTasksToStorage();
+                render();
+                showToast('事項內容已更新');
+            }
+        }
+
+        // Main Render Function
+        function render() {
+            // Filter tasks according to state & search query
+            let filtered = tasks.filter(task => {
+                const matchesFilter = 
+                    currentFilter === 'all' ? true :
+                    currentFilter === 'active' ? !task.completed :
+                    task.completed;
+
+                const matchesSearch = task.text.toLowerCase().includes(searchQuery);
+
+                return matchesFilter && matchesSearch;
+            });
+
+            // Update Counts
+            const totalCount = tasks.length;
+            const activeCount = tasks.filter(t => !t.completed).length;
+            const completedCount = tasks.filter(t => t.completed).length;
+
+            countAll.innerText = totalCount;
+            countActive.innerText = activeCount;
+            countCompleted.innerText = completedCount;
+
+            // Clear Completed Button visibility
+            if (completedCount > 0) {
+                clearCompletedBtn.classList.remove('hidden');
+            } else {
+                clearCompletedBtn.classList.add('hidden');
+            }
+
+            // Update Progress Bar
+            const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressText.innerText = `${percent}% (${completedCount}/${totalCount})`;
+
+            // Render Empty State or List
+            if (filtered.length === 0) {
+                taskList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                taskList.innerHTML = filtered.map(task => createTaskHTML(task)).join('');
+            }
+        }
+
+        // Generate HTML for single task
+        function createTaskHTML(task) {
+            const style = categoryStyles[task.category] || categoryStyles['日常'];
+            const formattedDate = task.dueDate ? task.dueDate.replace(/-/g, '.') : '';
+
+            return `
+                <li id="task-item-${task.id}" class="task-enter korean-card p-4 flex items-center justify-between gap-3 group hover:border-[#D8CEC4] transition korean-shadow">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <input 
+                            type="checkbox" 
+                            class="custom-checkbox flex-shrink-0" 
+                            ${task.completed ? 'checked' : ''} 
+                            onchange="toggleTask(${task.id})"
+                        >
+                        <div class="flex flex-col min-w-0 flex-1 cursor-pointer" onclick="toggleTask(${task.id})">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-xs px-2 py-0.5 rounded-lg border ${style.bg} ${style.text} ${style.border} font-medium">
+                                    ${style.icon} ${task.category}
+                                </span>
+                                ${formattedDate ? `<span class="text-[11px] text-[#A8A096]"><i class="far fa-clock mr-1"></i>${formattedDate}</span>` : ''}
+                            </div>
+                            <span class="text-sm font-medium mt-1 text-[#4A4540] truncate transition ${task.completed ? 'completed-text' : ''}">
+                                ${escapeHTML(task.text)}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition">
+                        <button 
+                            onclick="editTask(${task.id})" 
+                            class="p-2 text-[#9E9082] hover:text-[#3D3731] hover:bg-[#F5EFEC] rounded-xl transition"
+                            title="編輯內容"
+                        >
+                            <i class="far fa-edit text-xs"></i>
+                        </button>
+                        <button 
+                            onclick="deleteTask(${task.id})" 
+                            class="p-2 text-[#C9A2A2] hover:text-[#B85C5C] hover:bg-[#FBF0F0] rounded-xl transition"
+                            title="刪除"
+                        >
+                            <i class="far fa-trash-alt text-xs"></i>
+                        </button>
+                    </div>
+                </li>
+            `;
+        }
+
+        // Helper: Escape HTML to prevent XSS
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // Celebration Confetti trigger
+        function triggerConfetti() {
+            try {
+                confetti({
+                    particleCount: 40,
+                    spread: 60,
+                    origin: { y: 0.8 },
+                    colors: ['#E8C5B3', '#DDA15E', '#BC6C25', '#F3D0D7', '#C3A995']
+                });
+            } catch(e) {}
+        }
+
+        // Notification Toast
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = message;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
